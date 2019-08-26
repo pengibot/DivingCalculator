@@ -2,6 +2,26 @@ package com.pengibot.divingcalculator.business
 
 class Calculator {
 
+    companion object {
+        const val STRAIGHT:String = "Straight"
+        const val PIKE:String = "Pike"
+        const val TUCK:String = "Tuck"
+        const val FREE:String = "Free"
+        const val FLY:String = "Fly"
+
+        const val FORWARD:String = "Forward"
+        const val BACK:String = "Back"
+        const val REVERSE:String = "Reverse"
+        const val INWARD:String = "Inward"
+        const val ARMSTAND:String = "Armstand"
+
+        const val PLATFORM_1M = "1M"
+        const val PLATFORM_3M = "3M"
+        const val PLATFORM_5M = "5M"
+        const val PLATFORM_7_5M = "7.5M"
+        const val PLATFORM_10M = "10M"
+    }
+
     private var direction:String = ""
     private var flying:Boolean = false
     private var somersaults:String = ""
@@ -9,41 +29,14 @@ class Calculator {
     private var position:String = ""
     private var armstand:Boolean = false
 
-    fun validateDiveNumber(diveNumber:String?):Boolean {
-
-        val pattern = "([1-4][0-1]|[5-6][0-1])[1-9][A-D]$".toRegex(RegexOption.IGNORE_CASE)
-
-        val forwardGroup = listOf("101A", "101B", "101C", "101D",
-            "102A", "102B", "102C", "102D",
-            "103A", "103B", "103C", "103D",
-            "104A", "104B", "104C", "104D",
-            "105A", "105B", "105C", "105D",
-            "106A", "106B", "106C", "106D",
-            "107A", "107B", "107C", "107D",
-            "108A", "108B", "108C", "108D",
-            "109A", "109B", "109C", "109D",
-            "112A", "112B", "112C", "112D",
-            "112A", "112B", "112C", "112D",
-            "112A", "112B", "112C", "112D")
-
-        forwardGroup.forEach { dive ->
-            if(!pattern.matches(dive)) {
-                println("$dive is not recognised")
-            }
-        }
-
-        return true
-    }
-
-    fun diveDescription(diveNumber:String?):String
+    fun diveDescription(diveNumber:String):String
     {
-        if(diveNumber.isNullOrEmpty()) return "Invalid Dive Code"
         if(diveNumber[0] != '6' && diveNumber.length == 4){ // Non twisting dive 1-4
             when(diveNumber[0]) {
-                '1' -> direction = "Forward"
-                '2' -> direction = "Back"
-                '3' -> direction = "Reverse"
-                '4' -> direction = "Inward"
+                '1' -> direction = FORWARD
+                '2' -> direction = BACK
+                '3' -> direction = REVERSE
+                '4' -> direction = INWARD
             }
             if(diveNumber[1] == '1') {
                 flying = true
@@ -54,10 +47,10 @@ class Calculator {
         } else if(diveNumber[0] == '5') {
             // Twisting Dive
             when(diveNumber[1]) {
-                '1' -> direction = "Forward"
-                '2' -> direction = "Back"
-                '3' -> direction = "Reverse"
-                '4' -> direction = "Inward"
+                '1' -> direction = FORWARD
+                '2' -> direction = BACK
+                '3' -> direction = REVERSE
+                '4' -> direction = INWARD
             }
             somersaults = diveSomersaults(diveNumber[2].toString())
             // 4th digit indicates the number of half twists
@@ -66,10 +59,10 @@ class Calculator {
             // Armstand Dive
             armstand = true
             when(diveNumber[1]) {
-                '0' -> direction = "Armstand Dive"
-                '1' -> direction = "Armstand Forward"
-                '2' -> direction = "Armstand Back"
-                '3' -> direction = "Armstand Reverse"
+                '0' -> direction = "$ARMSTAND Dive"
+                '1' -> direction = "$ARMSTAND $FORWARD"
+                '2' -> direction = "$ARMSTAND $BACK"
+                '3' -> direction = "$ARMSTAND $REVERSE"
             }
             somersaults = diveSomersaults(diveNumber[2].toString())
             // 4th digit indicates the number of half twists
@@ -87,12 +80,30 @@ class Calculator {
 
     private fun divePosition(letter:Char):String {
         when(letter.toUpperCase()) {
-            'A' -> return "Straight"
-            'B' -> return "Pike"
-            'C' -> return "Tuck"
-            'D' -> return "Free"
+            'A' -> return STRAIGHT
+            'B' -> return PIKE
+            'C' -> return TUCK
+            'D' -> return FREE
         }
         return ""
+    }
+
+    // TODO: Check this out as it is untidy
+    private fun getSomersaultString():String {
+        when(somersaults) {
+            "1/2 Somersault" -> return "0-1"
+            "1 Somersault" -> return "0-1"
+            "1 1/2 Somersaults" -> return "1.5"
+            "2 Somersaults" -> return "etcs"
+            "2 1/2 Somersaults" -> return "etcs"
+            "3 Somersaults" -> return "etcs"
+            "3 1/2 Somersaults" -> return "etcs"
+            "4 Somersaults" -> return "etcs"
+            "4 1/2 Somersaults" -> return "etcs"
+            "5 Somersaults" -> return "etcs"
+            "5 1/2 Somersaults" -> return "etcs"
+        }
+        return "0"
     }
 
     private fun diveSomersaults(diveSomersaults:String):String {
@@ -146,57 +157,209 @@ class Calculator {
         return ""
     }
 
+    // TODO: Needs more validation. Very basic at the minute.
     fun validate(dive:String):Boolean {
-
-        // Possible Dives
-        // 101A
-
-        val pattern = "^[1-4][0-1][1-9][A-D]|5[1-4][1-9][1-9][A-D]|6[0-3][1-9][1-9][A-D]$".toRegex(RegexOption.IGNORE_CASE)
+        val pattern = "^[1-4][0-1][1-9][A-D]|5[1-4][1-9][1-9][A-D]|6[0-3][0-9][0-9]?[A-D]$".toRegex(RegexOption.IGNORE_CASE)
         return pattern.matches(dive)
 
     }
 
     // Somersaults
-    val componentA = mutableMapOf(
-        "1m" to mutableMapOf("0" to 0.9, "0.5" to 1.1, "1" to 1.2, "1.5" to 1.6, "2" to 2.0, "2.5" to 2.4, "3" to 2.7, "3.5" to 3.0, "4" to 3.3, "4.5" to 3.8, "5.5" to -99.0),
-        "3m" to mutableMapOf("0" to 1.0, "0.5" to 1.3, "1" to 1.3, "1.5" to 1.5, "2" to 1.8, "2.5" to 2.2, "3" to 2.3, "3.5" to 2.8, "4" to 2.9, "4.5" to 3.5, "5.5" to -99.0),
-        "5m" to mutableMapOf("0" to 0.9, "0.5" to 1.1, "1" to 1.2, "1.5" to 1.6, "2" to 2.0, "2.5" to 2.4,"3" to  2.7, "3.5" to 3.0, "4" to -99.0, "4.5" to -99.0, "5.5" to -99.0),
-        "7.5m" to mutableMapOf("0" to 1.0, "0.5" to 1.3, "1" to 1.3, "1.5" to 1.5, "2" to 1.8, "2.5" to 2.2, "3" to 2.3, "3.5" to 2.8, "4" to 3.5, "4.5" to 3.5, "5.5" to -99.0),
-        "10m" to mutableMapOf("0" to 1.0, "0.5" to 1.3, "1" to 1.4, "1.5" to 1.5, "2" to 1.9, "2.5" to 2.1, "3" to 2.5, "3.5" to 2.7, "4" to 3.5, "4.5"  to 3.5, "5.5" to 4.5)
+    private val componentA = mutableMapOf(
+        PLATFORM_1M to mutableMapOf(
+            "0" to 0.9,
+            "0.5" to 1.1,
+            "1" to 1.2,
+            "1.5" to 1.6,
+            "2" to 2.0,
+            "2.5" to 2.4,
+            "3" to 2.7,
+            "3.5" to 3.0,
+            "4" to 3.3,
+            "4.5" to 3.8,
+            "5.5" to -99.0),
+        PLATFORM_3M to mutableMapOf(
+            "0" to 1.0,
+            "0.5" to 1.3,
+            "1" to 1.3,
+            "1.5" to 1.5,
+            "2" to 1.8,
+            "2.5" to 2.2,
+            "3" to 2.3,
+            "3.5" to 2.8,
+            "4" to 2.9,
+            "4.5" to 3.5,
+            "5.5" to -99.0),
+        PLATFORM_5M to mutableMapOf(
+            "0" to 0.9,
+            "0.5" to 1.1,
+            "1" to 1.2,
+            "1.5" to 1.6,
+            "2" to 2.0,
+            "2.5" to 2.4,
+            "3" to  2.7,
+            "3.5" to 3.0,
+            "4" to -99.0,
+            "4.5" to -99.0,
+            "5.5" to -99.0),
+        PLATFORM_7_5M to mutableMapOf(
+            "0" to 1.0,
+            "0.5" to 1.3,
+            "1" to 1.3,
+            "1.5" to 1.5,
+            "2" to 1.8,
+            "2.5" to 2.2,
+            "3" to 2.3,
+            "3.5" to 2.8,
+            "4" to 3.5,
+            "4.5" to 3.5,
+            "5.5" to -99.0),
+        PLATFORM_10M to mutableMapOf(
+            "0" to 1.0,
+            "0.5" to 1.3,
+            "1" to 1.4,
+            "1.5" to 1.5,
+            "2" to 1.9,
+            "2.5" to 2.1,
+            "3" to 2.5,
+            "3.5" to 2.7,
+            "4" to 3.5,
+            "4.5"  to 3.5,
+            "5.5" to 4.5)
     )
 
     // Flight Position
     // For flying dives add fly position (E) to either (B) or (C) Position
-    val componentB = mutableMapOf(
-        "Tuck" to mutableMapOf(
-            "Fwd" to mutableMapOf("0-1" to 0.1, "1.5-2" to 0.0, "2.5" to 0.0, "3-3.5" to 0.0, "4-4.5" to 0.0),
-            "Back" to mutableMapOf("0-1" to 0.1, "1.5-2" to 0.0, "2.5" to 0.1, "3-3.5" to 0.0, "4-4.5" to 0.0),
-            "Rev" to mutableMapOf("0-1" to 0.1, "1.5-2" to 0.0, "2.5" to 0.0, "3-3.5" to 0.0, "4-4.5" to 0.2),
-            "Inw" to mutableMapOf("0-1" to -0.3, "1.5-2" to 0.1, "2.5" to 0.2, "3-3.5" to 0.3, "4-4.5" to 0.4)
+    private val componentB = mutableMapOf(
+        TUCK to mutableMapOf(
+            FORWARD to mutableMapOf(
+                "0-1" to 0.1,
+                "1.5-2" to 0.0,
+                "2.5" to 0.0,
+                "3-3.5" to 0.0,
+                "4-4.5" to 0.0),
+            BACK to mutableMapOf(
+                "0-1" to 0.1,
+                "1.5-2" to 0.0,
+                "2.5" to 0.1,
+                "3-3.5" to 0.0,
+                "4-4.5" to 0.0),
+            REVERSE to mutableMapOf(
+                "0-1" to 0.1,
+                "1.5-2" to 0.0,
+                "2.5" to 0.0,
+                "3-3.5" to 0.0,
+                "4-4.5" to 0.2),
+            INWARD to mutableMapOf(
+                "0-1" to -0.3,
+                "1.5-2" to 0.1,
+                "2.5" to 0.2,
+                "3-3.5" to 0.3,
+                "4-4.5" to 0.4)
         ),
-        "Pike" to mutableMapOf(
-            "Fwd" to mutableMapOf("0-1" to 0.2, "1.5-2" to 0.1, "2.5" to 0.2, "3-3.5" to 0.3, "4-4.5" to 0.4),
-            "Back" to mutableMapOf("0-1" to 0.2, "1.5-2" to 0.3, "2.5" to 0.3, "3-3.5" to 0.3, "4-4.5" to 0.4),
-            "Rev" to mutableMapOf("0-1" to 0.2, "1.5-2" to 0.3, "2.5" to 0.2, "3-3.5" to 0.3, "4-4.5" to 0.5),
-            "Inw" to mutableMapOf("0-1" to -0.2, "1.5-2" to 0.3, "2.5" to 0.5, "3-3.5" to 0.6, "4-4.5" to 0.8)
+        PIKE to mutableMapOf(
+            FORWARD to mutableMapOf(
+                "0-1" to 0.2,
+                "1.5-2" to 0.1,
+                "2.5" to 0.2,
+                "3-3.5" to 0.3,
+                "4-4.5" to 0.4),
+            BACK to mutableMapOf(
+                "0-1" to 0.2,
+                "1.5-2" to 0.3,
+                "2.5" to 0.3,
+                "3-3.5" to 0.3,
+                "4-4.5" to 0.4),
+            REVERSE to mutableMapOf(
+                "0-1" to 0.2,
+                "1.5-2" to 0.3,
+                "2.5" to 0.2,
+                "3-3.5" to 0.3,
+                "4-4.5" to 0.5),
+            INWARD to mutableMapOf(
+                "0-1" to -0.2,
+                "1.5-2" to 0.3,
+                "2.5" to 0.5,
+                "3-3.5" to 0.6,
+                "4-4.5" to 0.8)
         ),
-        "Str" to mutableMapOf(
-            "Fwd" to mutableMapOf("0-1" to 0.3, "1.5-2" to 0.4, "2.5" to 0.6, "3-3.5" to -99.0, "4-4.5" to -99.0),
-            "Rev" to mutableMapOf("0-1" to 0.3, "1.5-2" to 0.5, "2.5" to 0.7, "3-3.5" to -99.0, "4-4.5" to -99.0),
-            "Back" to mutableMapOf("0-1" to 0.3, "1.5-2" to 0.6, "2.5" to 0.6, "3-3.5" to -99.0, "4-4.5" to -99.0),
-            "Inw" to mutableMapOf("0-1" to 0.1, "1.5-2" to 0.8, "2.5" to -99.0, "3-3.5" to -99.0, "4-4.5" to -99.0)
+        STRAIGHT to mutableMapOf(
+            FORWARD to mutableMapOf(
+                "0-1" to 0.3,
+                "1.5-2" to 0.4,
+                "2.5" to 0.6,
+                "3-3.5" to -99.0,
+                "4-4.5" to -99.0),
+            REVERSE to mutableMapOf(
+                "0-1" to 0.3,
+                "1.5-2" to 0.5,
+                "2.5" to 0.7,
+                "3-3.5" to -99.0,
+                "4-4.5" to -99.0),
+            BACK to mutableMapOf(
+                "0-1" to 0.3,
+                "1.5-2" to 0.6,
+                "2.5" to 0.6,
+                "3-3.5" to -99.0,
+                "4-4.5" to -99.0),
+            INWARD to mutableMapOf(
+                "0-1" to 0.1,
+                "1.5-2" to 0.8,
+                "2.5" to -99.0,
+                "3-3.5" to -99.0,
+                "4-4.5" to -99.0)
         ),
-        "Free" to mutableMapOf(
-            "Fwd" to mutableMapOf("0-1" to 0.1, "1.5-2" to 0.0, "2.5" to 0.0, "3-3.5" to 0.0, "4-4.5" to -99.0),
-            "Back" to mutableMapOf("0-1" to 0.1, "1.5-2" to -0.1, "2.5" to -0.1, "3-3.5" to 0.0, "4-4.5" to -99.0),
-            "Rev" to mutableMapOf("0-1" to 0.1, "1.5-2" to -0.1, "2.5" to -0.2, "3-3.5" to 0.0, "4-4.5" to -99.0),
-            "Inw" to mutableMapOf("0-1" to -0.1, "1.5-2" to 0.2, "2.5" to 0.4, "3-3.5" to -99.0, "4-4.5" to -99.0)
+        FREE to mutableMapOf(
+            FORWARD to mutableMapOf(
+                "0-1" to 0.1,
+                "1.5-2" to 0.0,
+                "2.5" to 0.0,
+                "3-3.5" to 0.0,
+                "4-4.5" to -99.0),
+            BACK to mutableMapOf(
+                "0-1" to 0.1,
+                "1.5-2" to -0.1,
+                "2.5" to -0.1,
+                "3-3.5" to 0.0,
+                "4-4.5" to -99.0),
+            REVERSE to mutableMapOf(
+                "0-1" to 0.1,
+                "1.5-2" to -0.1,
+                "2.5" to -0.2,
+                "3-3.5" to 0.0,
+                "4-4.5" to -99.0),
+            INWARD to mutableMapOf(
+                "0-1" to -0.1,
+                "1.5-2" to 0.2,
+                "2.5" to 0.4,
+                "3-3.5" to -99.0,
+                "4-4.5" to -99.0)
         ),
-        "Fly" to mutableMapOf(
-            "Fwd" to mutableMapOf("0-1" to 0.2, "1.5-2" to 0.2, "2.5" to 0.3, "3-3.5" to 0.4, "4-4.5" to -99.0),
-            "Back" to mutableMapOf("0-1" to 0.1, "1.5-2" to 0.2, "2.5" to 0.3, "3-3.5" to -99.0, "4-4.5" to -99.0),
-            "Rev" to mutableMapOf("0-1" to 0.1, "1.5-2" to 0.2, "2.5" to 0.3, "3-3.5" to -99.0, "4-4.5" to -99.0),
-            "Inw" to mutableMapOf("0-1" to 0.4, "1.5-2" to 0.5, "2.5" to 0.7, "3-3.5" to -99.0, "4-4.5" to -99.0)
+        FLY to mutableMapOf(
+            FORWARD to mutableMapOf(
+                "0-1" to 0.2,
+                "1.5-2" to 0.2,
+                "2.5" to 0.3,
+                "3-3.5" to 0.4,
+                "4-4.5" to -99.0),
+            BACK to mutableMapOf(
+                "0-1" to 0.1,
+                "1.5-2" to 0.2,
+                "2.5" to 0.3,
+                "3-3.5" to -99.0,
+                "4-4.5" to -99.0),
+            REVERSE to mutableMapOf(
+                "0-1" to 0.1,
+                "1.5-2" to 0.2,
+                "2.5" to 0.3,
+                "3-3.5" to -99.0,
+                "4-4.5" to -99.0),
+            INWARD to mutableMapOf(
+                "0-1" to 0.4,
+                "1.5-2" to 0.5,
+                "2.5" to 0.7,
+                "3-3.5" to -99.0,
+                "4-4.5" to -99.0)
         )
     )
 
@@ -204,8 +367,8 @@ class Calculator {
     // (1) Dives with ½ somersault and twists can only be executed in positions A, B, or C,
     // (2) Dives with 1 or 1 ½ somersaults and twists can only be executed in position D,
     // (3) Dives with 2 or more somersaults and twists can only be executed in positions B or C
-    val componentC = mutableMapOf(
-        "Fwd" to mutableMapOf(
+    private val componentC = mutableMapOf(
+        FORWARD to mutableMapOf(
             "0.5 Twist 0.5-1 Som" to 0.4,
             "0.5 Twist 1.5-2 Som" to 0.4,
             "0.5 Twist 2.5 Som" to 0.4,
@@ -220,7 +383,7 @@ class Calculator {
             "3.5 Twists" to 1.6,
             "4 Twists" to 1.9,
             "4.5 Twists" to 2.0),
-        "Back" to mutableMapOf(
+        BACK to mutableMapOf(
             "0.5 Twist 0.5-1 Som" to 0.2,
             "0.5 Twist 1.5-2 Som" to 0.4,
             "0.5 Twist 2.5 Som" to 0.0,
@@ -235,7 +398,7 @@ class Calculator {
             "3.5 Twists" to 1.7,
             "4 Twists" to 1.8,
             "4.5 Twists" to 2.1),
-        "Rev" to mutableMapOf(
+        REVERSE to mutableMapOf(
             "0.5 Twist 0.5-1 Som" to 0.2,
             "0.5 Twist 1.5-2 Som" to 0.4,
             "0.5 Twist 2.5 Som" to 0.0,
@@ -250,7 +413,7 @@ class Calculator {
             "3.5 Twists" to 1.8,
             "4 Twists" to 1.8,
             "4.5 Twists" to 2.1),
-        "Inw" to mutableMapOf(
+        INWARD to mutableMapOf(
             "0.5 Twist 0.5-1 Som" to 0.2,
             "0.5 Twist 1.5-2 Som" to 0.4,
             "0.5 Twist 2.5 Som" to 0.2,
@@ -268,31 +431,53 @@ class Calculator {
     )
 
     // Approach
-    val componentD = mutableMapOf(
-        "1m" to mutableMapOf(
-            "Forward 0.5-3.5 Som" to 0.0,
-            "Forward 4-4.5 Som" to 0.5,
-            "Back 0.5-3 Som" to 0.2,
-            "Back 3.5-4.5 Som" to 0.6,
-            "Reverse 0.5-3 Som" to 0.3,
-            "Reverse 3.5-4.5 Som" to 0.5,
-            "Inward 0.5-1 Som" to 0.6,
-            "Inward 1.5-4.5 Som" to 0.5),
-        "3m" to mutableMapOf(
-            "Forward 0.5-3.5 Som" to 0.0,
-            "Forward 4-4.5 Som" to 0.3,
-            "Back 0.5-3 Som" to 0.2,
-            "Back 3.5-4.5 Som" to 0.4,
-            "Reverse 0.5-3 Som" to 0.3,
-            "Reverse 3.5-4.5 Som" to 0.3,
-            "Inward 0.5-1 Som" to 0.3,
-            "Inward 1.5-4.5 Som" to 0.3)
+    private val componentD = mutableMapOf(
+        PLATFORM_1M to mutableMapOf(
+            "$FORWARD 0.5-3.5" to 0.0,
+            "$FORWARD 4-4.5" to 0.5,
+            "$BACK 0.5-3" to 0.2,
+            "$BACK 3.5-4.5" to 0.6,
+            "$REVERSE 0.5-3" to 0.3,
+            "$REVERSE 3.5-4.5" to 0.5,
+            "$INWARD 0.5-1" to 0.6,
+            "$INWARD 1.5-4.5" to 0.5),
+        PLATFORM_3M to mutableMapOf(
+            "$FORWARD 0.5-3.5" to 0.0,
+            "$FORWARD 4-4.5" to 0.3,
+            "$BACK 0.5-3" to 0.2,
+            "$BACK 3.5-4.5" to 0.4,
+            "$REVERSE 0.5-3" to 0.3,
+            "$REVERSE 3.5-4.5" to 0.3,
+            "$INWARD 0.5-1" to 0.3,
+            "$INWARD 1.5-4.5" to 0.3),
+        // Arm stand Group (Does not apply to arm stand dives with twists)
+        PLATFORM_5M to mutableMapOf(
+            "$ARMSTAND $FORWARD 0-2" to 0.2,
+            "$ARMSTAND $FORWARD 2.5+" to 0.4,
+            "$ARMSTAND $BACK 0-0.5" to 0.2,
+            "$ARMSTAND $BACK 1.4" to 0.4,
+            "$ARMSTAND $REVERSE 0-0.5" to 0.3,
+            "$ARMSTAND $REVERSE 1-4" to 0.5),
+        PLATFORM_7_5M to mutableMapOf(
+            "$ARMSTAND $FORWARD 0-2" to 0.2,
+            "$ARMSTAND $FORWARD 2.5+" to 0.4,
+            "$ARMSTAND $BACK 0-0.5" to 0.2,
+            "$ARMSTAND $BACK 1.4" to 0.4,
+            "$ARMSTAND $REVERSE 0-0.5" to 0.3,
+            "$ARMSTAND $REVERSE 1-4" to 0.5),
+        PLATFORM_10M to mutableMapOf(
+            "$ARMSTAND $FORWARD 0-2" to 0.2,
+            "$ARMSTAND $FORWARD 2.5+" to 0.4,
+            "$ARMSTAND $BACK 0-0.5" to 0.2,
+            "$ARMSTAND $BACK 1.4" to 0.4,
+            "$ARMSTAND $REVERSE 0-0.5" to 0.3,
+            "$ARMSTAND $REVERSE 1-4" to 0.5)
     )
 
     // Unnatural Entry
     // (does not apply to twisting dives)
-    val componentE = mutableMapOf(
-        "1m" to mutableMapOf(
+    private val componentE = mutableMapOf(
+        FORWARD to mutableMapOf(
             "0.5" to 0.0,
             "1" to 0.1,
             "1.5" to 0.0,
@@ -301,8 +486,20 @@ class Calculator {
             "3" to 0.2,
             "3.5" to 0.0,
             "4" to 0.2,
-            "4.5" to 0.0),
-        "3m" to mutableMapOf(
+            "4.5" to 0.0,
+            "5.5" to -99.0),
+        INWARD to mutableMapOf(
+            "0.5" to 0.0,
+            "1" to 0.1,
+            "1.5" to 0.0,
+            "2" to 0.2,
+            "2.5" to 0.0,
+            "3" to 0.2,
+            "3.5" to 0.0,
+            "4" to 0.2,
+            "4.5" to 0.0,
+            "5.5" to -99.0),
+        BACK to mutableMapOf(
             "0.5" to 0.1,
             "1" to 0.0,
             "1.5" to 0.2,
@@ -311,19 +508,116 @@ class Calculator {
             "3" to 0.0,
             "3.5" to 0.4,
             "4" to 0.0,
-            "4.5" to 0.4)
+            "4.5" to 0.4,
+            "5.5" to -99.0),
+        REVERSE to mutableMapOf(
+            "0.5" to 0.1,
+            "1" to 0.0,
+            "1.5" to 0.2,
+            "2" to 0.0,
+            "2.5" to 0.3,
+            "3" to 0.0,
+            "3.5" to 0.4,
+            "4" to 0.0,
+            "4.5" to 0.4,
+            "5.5" to -99.0)
+    )
+
+    // Unnatural Entry
+    // (does not apply to twisting dives)
+    private val componentE_platform = mutableMapOf(
+        "$FORWARD" to mutableMapOf(
+            "0.5" to 0.0,
+            "1" to 0.1,
+            "1.5" to 0.0,
+            "2" to 0.2,
+            "2.5" to 0.0,
+            "3" to 0.2,
+            "3.5" to 0.0,
+            "4" to 0.0,
+            "4.5" to 0.0,
+            "5.5" to 0.0),
+        "$INWARD" to mutableMapOf(
+            "0.5" to 0.0,
+            "1" to 0.1,
+            "1.5" to 0.0,
+            "2" to 0.2,
+            "2.5" to 0.0,
+            "3" to 0.2,
+            "3.5" to 0.0,
+            "4" to 0.0,
+            "4.5" to 0.0,
+            "5.5" to 0.0),
+        "$BACK" to mutableMapOf(
+            "0.5" to 0.1,
+            "1" to 0.0,
+            "1.5" to 0.2,
+            "2" to 0.0,
+            "2.5" to 0.3,
+            "3" to 0.0,
+            "3.5" to 0.4,
+            "4" to 0.0,
+            "4.5" to 0.4,
+            "5.5" to 0.0),
+        "$REVERSE" to mutableMapOf(
+            "0.5" to 0.1,
+            "1" to 0.0,
+            "1.5" to 0.2,
+            "2" to 0.0,
+            "2.5" to 0.3,
+            "3" to 0.0,
+            "3.5" to 0.4,
+            "4" to 0.0,
+            "4.5" to 0.4,
+            "5.5" to 0.0),
+        "$ARMSTAND $BACK" to mutableMapOf(
+            "0.5" to 0.0,
+            "1" to 0.1,
+            "1.5" to 0.0,
+            "2" to 0.2,
+            "2.5" to 0.0,
+            "3" to 0.2,
+            "3.5" to 0.0,
+            "4" to 0.3,
+            "4.5" to 0.0,
+            "5.5" to 0.0),
+        "$ARMSTAND $REVERSE" to mutableMapOf(
+            "0.5" to 0.0,
+            "1" to 0.1,
+            "1.5" to 0.0,
+            "2" to 0.2,
+            "2.5" to 0.0,
+            "3" to 0.2,
+            "3.5" to 0.0,
+            "4" to 0.3,
+            "4.5" to 0.0,
+            "5.5" to 0.0),
+        "$ARMSTAND $FORWARD" to mutableMapOf(
+            "0.5" to 0.1,
+            "1" to 0.0,
+            "1.5" to 0.2,
+            "2" to 0.0,
+            "2.5" to 0.3,
+            "3" to 0.0,
+            "3.5" to 0.4,
+            "4" to 0.0,
+            "4.5" to 0.4,
+            "5.5" to 0.0)
     )
 
 
-    fun difficulty(dive:String, platform:String):Double {
-        //println(componentA["5m"]!!["3.5"])
-        //println(componentB["Pike"]!!["Inw"]!!["3-3.5"])
-        //println(componentC["Inw"]!!["4 Twists"])
-        //println(componentD["3m"]!!["Forward 4-4.5 Som"])
-        //println(componentE["1m"]!!["4"])
-        if(platform == "5m") {
-
-        }
-        return 0.0
+    fun difficulty(platform:String?):Double {
+        val a:Double? = componentA[platform]!![somersaults]
+        val b:Double? = componentB[position]!![direction]!![getSomersaultString()]
+        val c:Double? = componentA[platform]!![somersaults]
+        val d:Double? = componentA[platform]!![somersaults]
+        val e:Double? = componentA[platform]!![somersaults]
+        println(componentA["5m"]!!["3.5"])
+        println(componentB["Pike"]!!["Inw"]!!["3-3.5"])
+        println(componentC["Inw"]!!["4 Twists"])
+        println(componentD["3m"]!!["Forward 4-4.5 Som"])
+        println(componentE["1m"]!!["4"])
+        return a!! + b!! + c!! + d!! + e!!
     }
+
 }
