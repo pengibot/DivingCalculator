@@ -29,9 +29,12 @@ class Calculator {
     private var position:String = ""
     private var armstand:Boolean = false
 
-    fun diveDescription(diveNumber:String):String
+    fun diveDescription(diveNumber:String?):String
     {
-        if(diveNumber[0] != '6' && diveNumber.length == 4){ // Non twisting dive 1-4
+        if(diveNumber == null) {
+            return ""
+        }
+        else if(diveNumber[0] != '6' && diveNumber.length == 4){ // Non twisting dive 1-4
             when(diveNumber[0]) {
                 '1' -> direction = FORWARD
                 '2' -> direction = BACK
